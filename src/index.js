@@ -3,6 +3,7 @@ import dotenv from 'dotenv'
 import cors from 'cors'
 import cookieParser from 'cookie-parser'
 import connectDB from './Database/db.js';
+import router from './Routes/routes.js';
 dotenv.config({
     path: './.env'
 });
@@ -11,12 +12,15 @@ app.use(cors({
     origin:process.env.CORS_ORIGIN,
     credentials:true
 }));
-app.use(express.json());
-app.use(express.urlencoded({extended:true}));
-app.use(cookieParser());
+app.use(express.json()); // to get data in json format on req.body also body-parser is used earlier (now deprecated)
+app.use(express.urlencoded({extended:true})); //to get data on req.body
+app.use(cookieParser()); // to get access of cookies
 
 
 const port=process.env.PORT || 5001
+
+app.use("/api/v1",router)
+
 
 connectDB();
 app.listen(port,()=>{
