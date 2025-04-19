@@ -9,7 +9,7 @@ dotenv.config({
 });
 const app=express();
 app.use(cors({
-    origin: "https://cu-market-frontend-jajh.vercel.app", // not '*', not from env for now
+    origin: process.env.FRONTEND_URL, // not '*', not from env for now
     credentials: true
 }));
 app.use(express.json()); // to get data in json format on req.body also body-parser is used earlier (now deprecated)
