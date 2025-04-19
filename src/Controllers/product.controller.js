@@ -1,6 +1,7 @@
 import Product from '../Models/product.model.js';
 import uploadOnCloudinary from '../Utils/cloudinary.js';
 import fs from "fs";
+import User from '../Models/user.model.js'
 
 const addProduct = async (req, res) => {
     try {
@@ -97,4 +98,124 @@ const addProduct = async (req, res) => {
     }
 };
 
-export { addProduct };
+
+const getProducts=async(req,res)=>{
+    try {
+        const products = await Product.find(); // You can add filters, sorting, or pagination here if needed
+        res.status(200).json(products);
+      } catch (error) {
+        console.error('Error fetching products:', error);
+        res.status(500).json({ message: 'Failed to fetch products' });
+      }
+}
+
+const getUserProducts = async (req, res) => {
+    try {
+        const userId = req.user._id;
+        
+        if (!userId) {
+            return res.status(400).json({ 
+                success: false, 
+                message: "User ID is required" 
+            });
+        }
+        
+        const products = await Product.find({ user: userId }).sort({ createdAt: -1 });
+        
+        return res.status(200).json({
+            success: true,
+            products,
+            message: "User products fetched successfully"
+        });
+    } catch (error) {
+        console.error("Error fetching user products:", error);
+        return res.status(500).json({ 
+            success: false, 
+            message: "Failed to fetch user products",
+            error: error.message 
+        });
+    }
+};
+
+// Get specific product by ID
+const getProductById = async (req, res) => {
+    try {
+        const { productId } = req.params;
+        
+        if (!productId) {
+            return res.status(400).json({ 
+                success: false, 
+                message: "Product ID is required" 
+            });
+        }
+        
+        const product = await Product.findById(productId);
+        
+        if (!product) {
+            return res.status(404).json({ 
+                success: false, 
+                message: "Product not found" 
+            });
+        }
+        
+        return res.status(200).json({
+            success: true,
+            product,
+            message: "Product fetched successfully"
+        });
+    } catch (error) {
+        console.error("Error fetching product:", error);
+        return res.status(500).json({ 
+            success: false, 
+            message: "Failed to fetch product",
+            error: error.message 
+        });
+    }
+};
+const deleteProduct = async (req, res) => {
+    try {
+      const { productId } = req.params;
+      const userId = req.user._id;
+      
+      // Find the product first
+      const product = await Product.findById(productId);
+      
+      if (!product) {
+        return res.status(404).json({
+          success: false,
+          message: "Product not found"
+        });
+      }
+      
+      // Check if the user is the owner
+      if (product.user.toString() !== userId.toString()) {
+        return res.status(403).json({
+          success: false,
+          message: "You don't have permission to delete this product"
+        });
+      }
+      
+      // Delete the product
+      await Product.findByIdAndDelete(productId);
+
+    //   we also need to delete product id from user's product array
+
+    await User.findByIdAndUpdate(userId, {
+        $pull: { products: productId }
+      });
+      
+      return res.status(200).json({
+        success: true,
+        message: "Product deleted successfully"
+      });
+    } catch (error) {
+      console.error("Error deleting product:", error);
+      return res.status(500).json({
+        success: false,
+        message: "Failed to delete product",
+        error: error.message
+      });
+    }
+  };
+  
+  export { addProduct, getProducts, getUserProducts, getProductById, deleteProduct };

@@ -1,7 +1,7 @@
 import { Router } from "express";
-import  {registerUser, loginUser, logoutUser } from "../Controllers/auth.controller.js";
+import  {registerUser, loginUser, logoutUser, getUser, addProductToUser, getUserById } from "../Controllers/auth.controller.js";
 import { verifyJWT } from "../Middleware/auth.middleware.js";
-import { addProduct } from "../Controllers/product.controller.js";
+import { addProduct, deleteProduct, getProductById, getProducts, getUserProducts } from "../Controllers/product.controller.js";
 import { upload } from "../Middleware/multer.middleware.js";
 
 const router=Router();
@@ -11,11 +11,17 @@ const router=Router();
 router.post('/signup',registerUser);
 router.post('/login',loginUser);
 router.get('/logout',verifyJWT,logoutUser);
+router.get('/get-user',verifyJWT,getUser)
+router.get('/users/:userId', getUserById);
 
 
 // products
 router.post('/add-product',verifyJWT,upload.array("images", 4),addProduct); 
-
+router.get('/get-products',getProducts);
+router.patch('/:userId/add-product',verifyJWT,addProductToUser)
+router.get('/products/user', verifyJWT, getUserProducts); // New route for user products
+router.get('/products/:productId', getProductById); // New route for getting product by ID
+router.delete('/products/:productId', verifyJWT, deleteProduct);
 
 
 

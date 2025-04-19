@@ -1,3 +1,4 @@
+import mongoose from "mongoose";
 import User from "../Models/user.model.js";
 
 const registerUser = async (req, res) => {
@@ -110,7 +111,96 @@ const loginUser = async (req, res) => {
       return res.status(500).json({ message: "Internal Server Error" });
     }
   };
-  
+
+  const getUser=(req,res)=>{
+
+    res.status(200).json({
+      status: 200,
+      user: req.user,
+      message: "Current User Fetched Successfully"
+  });
+
+  }
+  const addProductToUser = async (req, res) => {
+    try {
+      const { userId } = req.params;
+      const { productId } = req.body;
+      
+      // Validate user ID and product ID
+      if (!mongoose.Types.ObjectId.isValid(userId) || !mongoose.Types.ObjectId.isValid(productId)) {
+        return res.status(400).json({ message: 'Invalid user ID or product ID' });
+      }
+      
+      // Update user by pushing the product ID to products array
+      const updatedUser = await User.findByIdAndUpdate(
+        userId,
+        { $push: { products: productId } },
+        { new: true } // Return the updated document
+      );
+      
+      if (!updatedUser) {
+        return res.status(404).json({ message: 'User not found' });
+      }
+      
+      res.status(200).json({ 
+        success: true,
+        message: 'Product added to user successfully', 
+        user: updatedUser 
+      });
+    } catch (error) {
+      console.error('Error adding product to user:', error);
+      res.status(500).json({ 
+        success: false,
+        message: 'Failed to add product to user'
+      });
+    }
+  };
+
+// Get user by ID - for product details
+const getUserById = async (req, res) => {
+  try {
+    const { userId } = req.params;
+
+    // Validate the user ID format
+    if (!mongoose.Types.ObjectId.isValid(userId)) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Invalid user ID format' 
+      });
+    }
+
+    // Find the user and exclude sensitive fields
+    const user = await User.findById(userId).select('-password');
+
+    // If no user found
+    if (!user) {
+      return res.status(404).json({ 
+        success: false, 
+        message: 'User not found' 
+      });
+    }
+
+    // Return user details
+    res.status(200).json({
+      success: true,
+      user: {
+        _id: user._id,
+        name: user.name,
+        email: user.email,
+        phone: user.phone,
+        role: user.role,
+        createdAt: user.createdAt
+      }
+    });
+  } catch (error) {
+    console.error('Error fetching user details:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Server error while fetching user details',
+      error: error.message 
+    });
+  }
+};
   
 
-export {registerUser,loginUser,logoutUser};
+export {registerUser,loginUser,logoutUser,getUser,addProductToUser,getUserById};

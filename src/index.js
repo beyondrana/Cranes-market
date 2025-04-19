@@ -9,8 +9,8 @@ dotenv.config({
 });
 const app=express();
 app.use(cors({
-    origin:process.env.CORS_ORIGIN,
-    credentials:true
+    origin: "http://localhost:5173", // not '*', not from env for now
+    credentials: true
 }));
 app.use(express.json()); // to get data in json format on req.body also body-parser is used earlier (now deprecated)
 app.use(express.urlencoded({extended:true})); //to get data on req.body
