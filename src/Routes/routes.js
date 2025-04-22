@@ -1,5 +1,5 @@
 import { Router } from "express";
-import  {registerUser, loginUser, logoutUser, getUser, addProductToUser, getUserById } from "../Controllers/auth.controller.js";
+import  {registerUser, loginUser, logoutUser, getUser, addProductToUser, getUserById, resetPassword } from "../Controllers/auth.controller.js";
 import { verifyJWT } from "../Middleware/auth.middleware.js";
 import { addProduct, deleteProduct, getProductById, getProducts, getUserProducts, updateProduct } from "../Controllers/product.controller.js";
 import { upload } from "../Middleware/multer.middleware.js";
@@ -13,6 +13,7 @@ router.post('/login',loginUser);
 router.get('/logout',verifyJWT,logoutUser);
 router.get('/get-user',verifyJWT,getUser)
 router.get('/users/:userId', getUserById);
+router.post('/reset-password',verifyJWT,resetPassword);
 
 
 // products

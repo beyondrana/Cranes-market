@@ -201,6 +201,63 @@ const getUserById = async (req, res) => {
     });
   }
 };
-  
 
-export {registerUser,loginUser,logoutUser,getUser,addProductToUser,getUserById};
+const resetPassword = async (req, res) => {
+  try {
+    const { currentPassword, newPassword } = req.body;
+    const userId = req.user._id; // This comes from your authentication middleware
+    
+    // Validate request data
+    if (!currentPassword || !newPassword) {
+      return res.status(400).json({
+        success: false,
+        message: "Current password and new password are required"
+      });
+    }
+    
+    if (newPassword.length < 8) {
+      return res.status(400).json({
+        success: false,
+        message: "Password must be at least 8 characters long"
+      });
+    }
+    
+    // Find the user
+    const user = await User.findById(userId);
+    
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found"
+      });
+    }
+    
+    // Verify current password
+    const isPasswordValid = await user.isPasswordCorrect(currentPassword);
+    
+    if (!isPasswordValid) {
+      return res.status(401).json({
+        success: false,
+        message: "Current password is incorrect"
+      });
+    }
+    
+    // Update password
+    user.password = newPassword;
+    await user.save(); // This will trigger the pre-save hook to hash the new password
+    
+    return res.status(200).json({
+      success: true,
+      message: "Password updated successfully"
+    });
+  } catch (error) {
+    console.error("Password reset error:", error);
+    return res.status(500).json({
+      success: false,
+      message: error.message || "Password reset failed due to server error"
+    });
+  }
+};
+
+
+export {registerUser,loginUser,logoutUser,getUser,addProductToUser,getUserById,resetPassword};
