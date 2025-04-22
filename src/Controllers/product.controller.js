@@ -217,5 +217,104 @@ const deleteProduct = async (req, res) => {
       });
     }
   };
+
+  const updateProduct = async (req, res) => {
+    try {
+      const { productId } = req.params;
+      const userId = req.user._id;
+      
+      // Find the product
+      const product = await Product.findById(productId);
+      
+      // Check if product exists
+      if (!product) {
+        return res.status(404).json({ 
+          success: false,
+          message: 'Product not found' 
+        });
+      }
+      
+      // Check if user is the owner
+      if (product.user.toString() !== userId.toString()) {
+        return res.status(403).json({ 
+          success: false,
+          message: 'Not authorized to update this product' 
+        });
+      }
+      
+      // Process form data
+      const { title, price, description, category, condition, location, negotiable } = req.body;
+      
+      // Handle existing images
+      let images = [];
+      if (req.body.existingImages) {
+        images = JSON.parse(req.body.existingImages);
+      }
+      
+      // Handle new uploaded images
+      if (req.files && req.files.length > 0) {
+        // Upload new images to Cloudinary
+        const imageUploadPromises = req.files.map(async (file) => {
+          const result = await uploadOnCloudinary(file.path);
+          return result?.url || null;
+        });
+        
+        // Wait for all uploads to complete
+        const newImageUrls = await Promise.all(imageUploadPromises);
+        
+        // Filter out any failed uploads
+        const validNewImageUrls = newImageUrls.filter(url => url !== null);
+        
+        // Combine existing images with new ones
+        images = [...images, ...validNewImageUrls];
+      }
+      
+      // Limit to maximum 4 images if needed
+      if (images.length > 4) {
+        images = images.slice(0, 4);
+      }
+      
+      // Update the product
+      const updatedProduct = await Product.findByIdAndUpdate(
+        productId,
+        {
+          title,
+          price,
+          description,
+          category,
+          condition,
+          location,
+          negotiable: negotiable === 'true' || negotiable === true,
+          images
+        },
+        { new: true }
+      );
+      
+      // Return success response
+      return res.status(200).json({ 
+        success: true,
+        message: 'Product updated successfully', 
+        product: updatedProduct 
+      });
+    } catch (error) {
+      // Clean up any uploaded files if error occurs
+      if (req.files) {
+        req.files.forEach(async (file) => {
+          try {
+            await fs.promises.unlink(file.path);
+          } catch (err) {
+            console.error("Error deleting temporary file:", err);
+          }
+        });
+      }
+      
+      console.error('Error updating product:', error);
+      return res.status(500).json({ 
+        success: false,
+        message: 'Failed to update product',
+        error: error.message 
+      });
+    }
+  };
   
-  export { addProduct, getProducts, getUserProducts, getProductById, deleteProduct };
+  export { addProduct, getProducts, getUserProducts, getProductById, deleteProduct,updateProduct };
